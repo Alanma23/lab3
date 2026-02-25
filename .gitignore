@@ -1,0 +1,7 @@
+# MIPS toolchain build artifacts
+tools/gcc-mips/mips_tc/
+tools/gcc-mips/build/
+
+# Optional: common generated sim build outputs
+sim/build/
+sim/tests/**/build/
