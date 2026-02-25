@@ -1,0 +1,10 @@
+Instruction Memory: tests/ori/build/app.hex
+WARNING: harness/userlogic_test.v:63: $readmemh(tests/ori/build/app.hex): Too many words in the file for the requested range [0:16383].
+No input data buffer
+No output buffer
+Running userlogic for maximum of 1000 cycles
+VCD info: dumpfile tests/ori/streamwave.vcd opened for output.
+Userlogic ran for 7 cycles
+status register = 1
+test register = 1
+harness/userlogic_test.v:155: $finish called at 100000 (1ps)
