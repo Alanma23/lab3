@@ -1,9 +1,7 @@
-Partner 1: [your name]
-Partner 2: [partner name]
-Group: [group number]
+Alan Ma & Zhikai Huang
+Group #50
 
-Instructions Implemented
-------------------------
+Instructions Implemented: 
 Branch: BEQ, BNE, BGTZ, BLEZ, BLTZ, BGEZ, BLTZAL, BGEZAL
 Jump: J, JAL, JR, JALR
 Shift (immediate): SLL, SRL, SRA
@@ -14,19 +12,17 @@ Load: LB, LBU, LH, LW, LL
 Store: SB, SH, SW, SC
 Conditional move: MOVN, MOVZ
 
-Hazard Handling and Forwarding
--------------------------------
+Hazard Handling and Forwarding:
 Forwarding is implemented in the decode stage by comparing the source register
 addresses (rs, rt) against the destination register addresses of instructions
 currently in the EX and MEM stages.
 
-EX-stage forwarding applies when an instruction in EX will write a register
+Our EX forwarding applies when an instruction in EX will write a register
 that the instruction in ID is reading, provided the EX instruction is not a
-load (the load result is not available until after the MEM stage). In that
-case the ALU result from EX is forwarded directly into the rs_data or rt_data
-paths used by the decode stage.
+load (the load result is not available until after the MEM stage). Thus, ALU 
+result from EX is forwarded directly into the rs_data or rt_data paths used by the decode stage.
 
-MEM-stage forwarding applies when an instruction in MEM will write a register
+We MEM forwarding applies when an instruction in MEM will write a register
 that the instruction in ID is reading. The writeback data from MEM is
 forwarded in place of the register file read. EX-stage forwarding takes
 priority over MEM-stage forwarding.
@@ -38,11 +34,11 @@ enable and injecting a NOP into the ID/EX pipeline registers for one cycle.
 The saved instruction register holds the stalled instruction so it can be
 re-decoded on the next cycle.
 
-For branch instructions, the branch condition is evaluated in the decode stage
+For branch instr, the branch condition is evaluated in the decode stage
 using forwarded register values, so branches resolve in ID with no branch
 delay beyond the single branch delay slot that the assembler fills.
 
-AI Usage
---------
-GPT was used to understand the problem setup, map instruction timing across
-pipeline stages, and interpret waveform diagrams during debugging.
+AI Usage:
+We used GPT 5.2 to understand the problem setup, map instruction timing across
+pipeline stages, and interpret waveform diagrams during debugging. Looking through waveforms was not particularly helpful we note, 
+but its ability to help us get a better mental map was quite useful.
