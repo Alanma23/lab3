@@ -27,7 +27,7 @@ boot:
     subu    $t4, $t2, $t3       # expect 0
     nop
     nop
-    bne     $t4, $0, $fail
+    bne     $t4, $0, $fail1
     nop
 
     # PSUB.B: 0x05050505 - 0x01010101 = 0x04040404
@@ -45,7 +45,7 @@ boot:
     subu    $t4, $t2, $t3
     nop
     nop
-    bne     $t4, $0, $fail
+    bne     $t4, $0, $fail2
     nop
 
     # PSLL.B: 0x01020408 << 1 per byte = 0x02040810 (shamt=1)
@@ -60,7 +60,7 @@ boot:
     subu    $t4, $t2, $t3
     nop
     nop
-    bne     $t4, $0, $fail
+    bne     $t4, $0, $fail3
     nop
 
     # PABS.B: 0x80808080 (all -128) -> 0x80808080
@@ -75,7 +75,7 @@ boot:
     subu    $t4, $t2, $t3
     nop
     nop
-    bne     $t4, $0, $fail
+    bne     $t4, $0, $fail4
     nop
 
     # PUNPKLO: 0x12345678 -> lower 2 bytes zero-extend: 0x00560078
@@ -90,7 +90,7 @@ boot:
     subu    $t4, $t2, $t3
     nop
     nop
-    bne     $t4, $0, $fail
+    bne     $t4, $0, $fail5
     nop
 
     # PUNPKHI: 0x12345678 -> upper 2 bytes: 0x00120034
@@ -105,7 +105,7 @@ boot:
     subu    $t4, $t2, $t3
     nop
     nop
-    bne     $t4, $0, $fail
+    bne     $t4, $0, $fail6
     nop
 
     # ABS: -1 -> 1
