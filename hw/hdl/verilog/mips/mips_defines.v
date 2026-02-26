@@ -57,6 +57,14 @@
 `define NOR   6'b100111
 `define SLT   6'b101010
 `define SLTU  6'b101011
+// Packed SIMD (SPECIAL) and scalar ABS
+`define PADD_B  6'b110000
+`define PSUB_B  6'b110001
+`define PSLL_B  6'b110010
+`define PABS_B  6'b110011
+`define PUNPKLO 6'b110100
+`define PUNPKHI 6'b110101
+`define ABS     6'b111000
 `define DC6   6'bxxxxxx
 
 // Register names
@@ -98,22 +106,29 @@
 `define NOP 32'b0 // same as sll $zero, $zero, 0
 
 
-// opcodes for the ALU
-
-`define ALU_ADDU 4'd0
-`define ALU_AND 4'd1
-`define ALU_XOR 4'd2
-`define ALU_OR 4'd3
-`define ALU_NOR 4'd4
-`define ALU_SUBU 4'd5
-`define ALU_SLTU 4'd6
-`define ALU_SLT 4'd7
-`define ALU_SRL 4'd8
-`define ALU_SRA 4'd9
-`define ALU_SLL 4'd10
-`define ALU_PASSX 4'd11
-`define ALU_PASSY 4'd12
-`define ALU_ADD 4'd13
-`define ALU_SUB 4'd14
-`define ALU_MUL 4'd15
-`define ALU_SUBM 4'd16
+// opcodes for the ALU (5 bits to allow SIMD + ABS)
+`define ALU_ADDU   5'd0
+`define ALU_AND    5'd1
+`define ALU_XOR    5'd2
+`define ALU_OR     5'd3
+`define ALU_NOR    5'd4
+`define ALU_SUBU   5'd5
+`define ALU_SLTU   5'd6
+`define ALU_SLT    5'd7
+`define ALU_SRL    5'd8
+`define ALU_SRA    5'd9
+`define ALU_SLL    5'd10
+`define ALU_PASSX  5'd11
+`define ALU_PASSY  5'd12
+`define ALU_ADD    5'd13
+`define ALU_SUB    5'd14
+`define ALU_MUL    5'd15
+`define ALU_SUBM   5'd16
+// Packed SIMD
+`define ALU_PADD_B  5'd17
+`define ALU_PSUB_B  5'd18
+`define ALU_PSLL_B  5'd19
+`define ALU_PABS_B  5'd20
+`define ALU_PUNPKLO 5'd21
+`define ALU_PUNPKHI 5'd22
+`define ALU_ABS     5'd23

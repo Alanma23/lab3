@@ -31,7 +31,7 @@ module mips_cpu (
     wire reg_we_id, reg_we_cond_ex, reg_we_ex, reg_we_mem, reg_we_wb;
     wire movn_id, movn_ex, movz_id, movz_ex;
     wire atomic_id, atomic_ex;
-    wire [3:0] alu_opcode_id, alu_opcode_ex;
+    wire [4:0] alu_opcode_id, alu_opcode_ex;
     wire [31:0] alu_op_x_id, alu_op_y_id, alu_op_x_ex, alu_op_y_ex;
     wire [31:0] alu_result_ex, alu_result_mem;
     wire alu_op_y_zero_ex;
@@ -130,7 +130,7 @@ module mips_cpu (
     // needed for X stage
     dffarre #(32) alu_op_x_id2ex (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(alu_op_x_id), .q(alu_op_x_ex));
     dffarre #(32) alu_op_y_id2ex (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(alu_op_y_id), .q(alu_op_y_ex));
-    dffarre #(4)  alu_opcode_id2ex (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(alu_opcode_id), .q(alu_opcode_ex));
+    dffarre #(5)  alu_opcode_id2ex (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(alu_opcode_id), .q(alu_opcode_ex));
     dffarre       movn (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(movn_id), .q(movn_ex));
     dffarre       movz (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(movz_id), .q(movz_ex));
 

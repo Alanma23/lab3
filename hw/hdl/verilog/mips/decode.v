@@ -18,7 +18,7 @@ module decode (
     output wire jump_reg,
     output wire [31:0] jr_pc,
     output wire [31:0] branch_target,
-    output reg [3:0] alu_opcode,
+    output reg [4:0] alu_opcode,
     output wire [31:0] alu_op_x,
     output reg [31:0] alu_op_y,
     output wire mem_we,
@@ -98,7 +98,13 @@ module decode (
     wire isSRAV = (op == `SPECIAL) && (funct == `SRAV);
 
     wire isShiftImm = isSLL || isSRL || isSRA;
-    wire isShift = isShiftImm || isSLLV || isSRLV || isSRAV;
+    wire isPSLL_B = (op == `SPECIAL) && (funct == `PSLL_B);
+    wire isPABS_B = (op == `SPECIAL) && (funct == `PABS_B);
+    wire isPUNPKLO = (op == `SPECIAL) && (funct == `PUNPKLO);
+    wire isPUNPKHI = (op == `SPECIAL) && (funct == `PUNPKHI);
+    wire isABS = (op == `SPECIAL) && (funct == `ABS);
+    wire isPackedSIMD_rs_only = isPABS_B || isPUNPKLO || isPUNPKHI;
+    wire isShift = isShiftImm || isSLLV || isSRLV || isSRAV || isPSLL_B;
 
 //******************************************************************************
 // ALU instructions decode / control signal for ALU datapath
@@ -143,6 +149,13 @@ module decode (
             {`SPECIAL, `SRLV}:  alu_opcode = `ALU_SRL;
             {`SPECIAL, `SRAV}:  alu_opcode = `ALU_SRA;
             {`SPECIAL2, `MUL}:  alu_opcode = `ALU_MUL;
+            {`SPECIAL, `PADD_B}:   alu_opcode = `ALU_PADD_B;
+            {`SPECIAL, `PSUB_B}:   alu_opcode = `ALU_PSUB_B;
+            {`SPECIAL, `PSLL_B}:   alu_opcode = `ALU_PSLL_B;
+            {`SPECIAL, `PABS_B}:   alu_opcode = `ALU_PABS_B;
+            {`SPECIAL, `PUNPKLO}:  alu_opcode = `ALU_PUNPKLO;
+            {`SPECIAL, `PUNPKHI}:  alu_opcode = `ALU_PUNPKHI;
+            {`SPECIAL, `ABS}:      alu_opcode = `ALU_ABS;
             // compare rs data to 0, only care about 1 operand
             {`BGTZ, `DC6}:      alu_opcode = `ALU_PASSX;
             {`BLEZ, `DC6}:      alu_opcode = `ALU_PASSX;
@@ -229,8 +242,8 @@ module decode (
     wire isALUImm = (op == `ADDI)  || (op == `ADDIU) || (op == `SLTI) ||
                     (op == `SLTIU) || (op == `ANDI)  || (op == `ORI)  || (op == `XORI);
 
-    // Rt is read unless the instruction is LUI, a jump-target, uses an immediate, or is a load
-    wire read_from_rt = ~(isLUI || jump_target || isALUImm || mem_read);
+    // Rt is read unless the instruction is LUI, a jump-target, uses an immediate, or is a load, or is PSLL.B (uses shamt) or rs-only packed/ABS
+    wire read_from_rt = ~(isLUI || jump_target || isALUImm || mem_read || isPSLL_B || isPackedSIMD_rs_only || isABS);
 
     assign stall = (rs_mem_dependency && read_from_rs) || (rt_mem_dependency && read_from_rt);
 
@@ -241,8 +254,8 @@ module decode (
 // Determine ALU inputs and register writeback address
 //******************************************************************************
 
-    // For shift operations, use either the shamt field or the lower 5 bits of rs
-    wire [31:0] shift_amount = isShiftImm ? shamt : rs_data[4:0];
+    // For shift operations, use either the shamt field or the lower 5 bits of rs (PSLL.B uses shamt)
+    wire [31:0] shift_amount = (isShiftImm || isPSLL_B) ? {27'b0, shamt} : rs_data[4:0];
     assign alu_op_x = isShift ? shift_amount : rs_data;
 
     // For link instructions, the second ALU operand carries PC+8 (the return address)
@@ -256,6 +269,10 @@ module decode (
             alu_op_y = pc_plus8;
         else if (use_imm)
             alu_op_y = imm;
+        else if (isPSLL_B)
+            alu_op_y = rs_data;   // PSLL.B rd, rs, shamt: shift rs by shamt per byte
+        else if (isPackedSIMD_rs_only || isABS)
+            alu_op_y = 32'b0;     // single-operand: rt not used
         else
             alu_op_y = rt_data;
     end
