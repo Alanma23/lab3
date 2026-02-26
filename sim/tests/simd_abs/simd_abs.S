@@ -10,12 +10,13 @@
     .global boot
     .ent    boot
 boot:
-    lui     $s0, 0x8002
+    lui     $s0, 0x8002         # base for status/test registers (need delay for WB)
+    nop
+    nop
+    nop
     ori     $s1, $0, 1
-    # If result is 0: program never wrote (stuck or wrong entry). Write 255 first so
-    # if we time out without hitting pass/fail, result=255 means "started but stuck".
     addiu   $t5, $0, 255
-    sw      $t5, 4($s0)
+    sw      $t5, 4($s0)         # smoke: so result != 0 if we reach here
     nop
     nop
     # Pass/fail handlers overwrite test reg and set status; if we get 255 we timed out.
