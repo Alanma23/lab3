@@ -24,7 +24,7 @@ module instruction_fetch (
     wire [31:0] pc_id_p4 = pc_id + 3'h4;
     wire [31:0] j_addr = {pc_id_p4[31:28], instr_id[25:0], 2'b0};
 
-    // Priority: jump_reg > jump_branch > jump_target > PC+4
+    // jump_reg takes priority over jump_branch, which takes priority over jump_target, then PC+4
     wire [31:0] pc_next = jump_reg    ? jr_pc         :
                           jump_branch ? branch_target  :
                           jump_target ? j_addr         :

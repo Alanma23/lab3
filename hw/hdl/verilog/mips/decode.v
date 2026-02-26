@@ -189,7 +189,7 @@ module decode (
 // forwarding and stalling logic
 //******************************************************************************
 
-    // EX-stage forwarding (not for loads: result not ready until MEM stage)
+    // EX stage forwarding does not apply to loads since the result is not ready until MEM
     wire forward_rs_ex = (rs_addr == reg_write_addr_ex) && (rs_addr != `ZERO) && reg_we_ex && ~mem_read_ex;
     wire forward_rt_ex = (rt_addr == reg_write_addr_ex) && (rt_addr != `ZERO) && reg_we_ex && ~mem_read_ex;
 
@@ -216,7 +216,7 @@ module decode (
             rt_data = rt_data_in;
     end
 
-    // Load-use stall: wait 1 cycle if consuming the result of a load in EX
+    // stall for 1 cycle when the next instruction reads the result of a load still in EX
     wire rs_mem_dependency = (rs_addr == reg_write_addr_ex) && mem_read_ex && (rs_addr != `ZERO);
     wire rt_mem_dependency = (rt_addr == reg_write_addr_ex) && mem_read_ex && (rt_addr != `ZERO);
 
@@ -260,8 +260,9 @@ module decode (
             alu_op_y = rt_data;
     end
 
-    // JAL / BGEZAL / BLTZAL: the rt field is not a register; force writeback to $ra
-    // Immediate instructions write to rt; R-type instructions write to rd
+    // JAL and branch-and-link instructions use the rt field for the branch condition,
+    // not as a register specifier, so writeback goes to $ra.
+    // Immediate instructions write to rt; R-type instructions write to rd.
     reg [4:0] reg_write_addr_r;
     always @(*) begin
         if (isJAL || isBranchLink)
@@ -284,7 +285,7 @@ module decode (
                                  isBEQ;
     assign reg_we = ~is_non_writing_instr;
 
-    // Conditional moves: write only when condition register meets criterion
+    // Conditional moves write to the destination only when the condition register is met.
     assign movn = (op == `SPECIAL) && (funct == `MOVN);
     assign movz = (op == `SPECIAL) && (funct == `MOVZ);
 

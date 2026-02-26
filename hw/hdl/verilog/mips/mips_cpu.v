@@ -148,9 +148,9 @@ module mips_cpu (
 
     // For MOVN/MOVZ the write enable is conditional on the value of the condition register.
     // For all other instructions the write is unconditional (movn_ex and movz_ex are both 0).
-    wire is_movn_write = movn_ex && ~alu_op_y_zero_ex; // movn: write when condition register is nonzero
-    wire is_movz_write = movz_ex && alu_op_y_zero_ex;  // movz: write when condition register is zero
-    wire is_plain_write = ~movz_ex && ~movn_ex;          // normal instruction: always write
+    wire is_movn_write = movn_ex && ~alu_op_y_zero_ex;
+    wire is_movz_write = movz_ex && alu_op_y_zero_ex;
+    wire is_plain_write = ~movz_ex && ~movn_ex;
     assign reg_we_ex = reg_we_cond_ex && (is_movn_write || is_movz_write || is_plain_write);
 
     alu x_stage (
