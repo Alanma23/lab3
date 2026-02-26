@@ -148,8 +148,8 @@ module mips_cpu (
 
     // For MOVN/MOVZ the write enable is conditional on the value of the condition register.
     // For all other instructions the write is unconditional (movn_ex and movz_ex are both 0).
-    wire is_movn_write  = movn_ex && ~alu_op_y_zero_ex; // movn: write when condition register is nonzero
-    wire is_movz_write  = movz_ex &&  alu_op_y_zero_ex; // movz: write when condition register is zero
+    wire is_movn_write = movn_ex && ~alu_op_y_zero_ex; // movn: write when condition register is nonzero
+    wire is_movz_write = movz_ex && alu_op_y_zero_ex;  // movz: write when condition register is zero
     wire is_plain_write = ~movz_ex && ~movn_ex;          // normal instruction: always write
     assign reg_we_ex = reg_we_cond_ex && (is_movn_write || is_movz_write || is_plain_write);
 
@@ -165,7 +165,7 @@ module mips_cpu (
 
     // For SC, inject the success or failure result (1 or 0) into the pipeline
     // in place of the ALU-computed address so it gets written back to the register file.
-    wire [31:0] sc_result       = {{31{1'b0}}, (mem_sc_ex && mem_we_ex)};
+    wire [31:0] sc_result = {{31{1'b0}}, (mem_sc_ex && mem_we_ex)};
     wire [31:0] alu_sc_result_ex = mem_sc_ex ? sc_result : alu_result_ex;
 
     // needed for M stage
@@ -180,7 +180,7 @@ module mips_cpu (
     dffare reg_we_ex2mem (.clk(clk), .r(rst), .en(en), .d(reg_we_ex), .q(reg_we_mem));
 
     assign mem_read_en = mem_read_ex;
-    assign mem_addr    = alu_result_ex;
+    assign mem_addr = alu_result_ex;
 
     // Byte-enable signals for sub-word writes.
     // A word write enables all four bytes.
@@ -191,10 +191,10 @@ module mips_cpu (
     wire mem_hw_upper = mem_halfword_ex && ~mem_addr[1];
     wire mem_hw_lower = mem_halfword_ex &&  mem_addr[1];
 
-    wire mem_byte_b3  = mem_byte_ex && (mem_addr[1:0] == 2'b00);
-    wire mem_byte_b2  = mem_byte_ex && (mem_addr[1:0] == 2'b01);
-    wire mem_byte_b1  = mem_byte_ex && (mem_addr[1:0] == 2'b10);
-    wire mem_byte_b0  = mem_byte_ex && (mem_addr[1:0] == 2'b11);
+    wire mem_byte_b3 = mem_byte_ex && (mem_addr[1:0] == 2'b00);
+    wire mem_byte_b2 = mem_byte_ex && (mem_addr[1:0] == 2'b01);
+    wire mem_byte_b1 = mem_byte_ex && (mem_addr[1:0] == 2'b10);
+    wire mem_byte_b0 = mem_byte_ex && (mem_addr[1:0] == 2'b11);
 
     assign mem_write_en[3] = mem_we_ex && (mem_is_word || mem_byte_b3 || mem_hw_upper);
     assign mem_write_en[2] = mem_we_ex && (mem_is_word || mem_byte_b2 || mem_hw_upper);

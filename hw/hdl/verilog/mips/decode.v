@@ -67,38 +67,38 @@ module decode (
 // branch instructions decode
 //******************************************************************************
 
-    wire isBEQ    = (op == `BEQ);
+    wire isBEQ = (op == `BEQ);
     wire isBGEZNL = (op == `BLTZ_GEZ) && (rt_addr == `BGEZ);
     wire isBGEZAL = (op == `BLTZ_GEZ) && (rt_addr == `BGEZAL);
-    wire isBGTZ   = (op == `BGTZ) && (rt_addr == 5'b00000);
-    wire isBLEZ   = (op == `BLEZ) && (rt_addr == 5'b00000);
+    wire isBGTZ = (op == `BGTZ) && (rt_addr == 5'b00000);
+    wire isBLEZ = (op == `BLEZ) && (rt_addr == 5'b00000);
     wire isBLTZNL = (op == `BLTZ_GEZ) && (rt_addr == `BLTZ);
     wire isBLTZAL = (op == `BLTZ_GEZ) && (rt_addr == `BLTZAL);
-    wire isBNE    = (op == `BNE);
+    wire isBNE = (op == `BNE);
     wire isBranchLink = isBGEZAL || isBLTZAL;
 
 //******************************************************************************
 // jump instructions decode
 //******************************************************************************
 
-    wire isJ    = (op == `J);
-    wire isJAL  = (op == `JAL);
-    wire isJR   = (op == `SPECIAL) && (funct == `JR);
+    wire isJ = (op == `J);
+    wire isJAL = (op == `JAL);
+    wire isJR = (op == `SPECIAL) && (funct == `JR);
     wire isJALR = (op == `SPECIAL) && (funct == `JALR);
 
 //******************************************************************************
 // shift instruction decode
 //******************************************************************************
 
-    wire isSLL  = (op == `SPECIAL) && (funct == `SLL);
-    wire isSRL  = (op == `SPECIAL) && (funct == `SRL);
-    wire isSRA  = (op == `SPECIAL) && (funct == `SRA);
+    wire isSLL = (op == `SPECIAL) && (funct == `SLL);
+    wire isSRL = (op == `SPECIAL) && (funct == `SRL);
+    wire isSRA = (op == `SPECIAL) && (funct == `SRA);
     wire isSLLV = (op == `SPECIAL) && (funct == `SLLV);
     wire isSRLV = (op == `SPECIAL) && (funct == `SRLV);
     wire isSRAV = (op == `SPECIAL) && (funct == `SRAV);
 
     wire isShiftImm = isSLL || isSRL || isSRA;
-    wire isShift    = isShiftImm || isSLLV || isSRLV || isSRAV;
+    wire isShift = isShiftImm || isSLLV || isSRLV || isSRAV;
 
 //******************************************************************************
 // ALU instructions decode / control signal for ALU datapath
@@ -170,7 +170,7 @@ module decode (
 
     wire [31:0] imm_sign_extend = {{16{immediate[15]}}, immediate};
     wire [31:0] imm_zero_extend = {16'b0, immediate};
-    wire [31:0] imm_upper       = {immediate, 16'b0};
+    wire [31:0] imm_upper = {immediate, 16'b0};
 
     // Logical immediates (ANDI, ORI, XORI) are zero-extended; others sign-extended
     wire is_logical_imm = (op == `ANDI) || (op == `ORI) || (op == `XORI);
@@ -299,7 +299,7 @@ module decode (
     assign mem_read = (op == `LW) || (op == `LB) || (op == `LBU) || (op == `LH) || (op == `LL);
 
     // Sub-word access width
-    assign mem_byte     = (op == `SB) || (op == `LB) || (op == `LBU);
+    assign mem_byte = (op == `SB) || (op == `LB) || (op == `LBU);
     assign mem_halfword = (op == `LH) || (op == `SH);
 
     // Sign-extend the loaded value for all loads except LBU (unsigned byte)
@@ -330,8 +330,8 @@ module decode (
     wire rs_gez = ~rs_data[31];                          // rs >= 0 (sign bit clear)
 
     // Individual branch-taken conditions
-    wire branch_beq  = isBEQ  && isEqual;
-    wire branch_bne  = isBNE  && ~isEqual;
+    wire branch_beq = isBEQ && isEqual;
+    wire branch_bne = isBNE && ~isEqual;
     wire branch_bgtz = isBGTZ && rs_gtz;
     wire branch_blez = isBLEZ && rs_lez;
     wire branch_bltz = (isBLTZNL || isBLTZAL) && rs_ltz;
@@ -347,6 +347,6 @@ module decode (
     assign branch_target = pc + 32'd4 + {imm_sign_extend[29:0], 2'b0};
 
     assign jump_target = isJ   || isJAL;
-    assign jump_reg    = isJR  || isJALR;
+    assign jump_reg = isJR || isJALR;
 
 endmodule
