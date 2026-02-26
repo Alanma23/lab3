@@ -118,7 +118,7 @@ boot:
     subu    $t4, $t2, $t3
     nop
     nop
-    bne     $t4, $0, $fail
+    bne     $t4, $0, $fail7
     nop
 
     # ABS: -42 -> 42
@@ -131,7 +131,7 @@ boot:
     subu    $t4, $t2, $t3
     nop
     nop
-    bne     $t4, $0, $fail
+    bne     $t4, $0, $fail8
     nop
 
 $pass:
@@ -141,8 +141,51 @@ $done:
     j       $done
     nop
 
-$fail:
-    sw      $0, 4($s0)
+$fail1:
+    addiu   $t5, $0, 1
+    sw      $t5, 4($s0)
+    sw      $s1, 0($s0)
+    j       $done
+    nop
+$fail2:
+    addiu   $t5, $0, 2
+    sw      $t5, 4($s0)
+    sw      $s1, 0($s0)
+    j       $done
+    nop
+$fail3:
+    addiu   $t5, $0, 3
+    sw      $t5, 4($s0)
+    sw      $s1, 0($s0)
+    j       $done
+    nop
+$fail4:
+    addiu   $t5, $0, 4
+    sw      $t5, 4($s0)
+    sw      $s1, 0($s0)
+    j       $done
+    nop
+$fail5:
+    addiu   $t5, $0, 5
+    sw      $t5, 4($s0)
+    sw      $s1, 0($s0)
+    j       $done
+    nop
+$fail6:
+    addiu   $t5, $0, 6
+    sw      $t5, 4($s0)
+    sw      $s1, 0($s0)
+    j       $done
+    nop
+$fail7:
+    addiu   $t5, $0, 7
+    sw      $t5, 4($s0)
+    sw      $s1, 0($s0)
+    j       $done
+    nop
+$fail8:
+    addiu   $t5, $0, 8
+    sw      $t5, 4($s0)
     sw      $s1, 0($s0)
     j       $done
     nop
