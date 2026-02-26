@@ -21,6 +21,7 @@ boot:
     .word   0x01095030          # PADD.B $t2, $t0, $t1  (funct 0x30)
     nop
     nop
+    nop
     lui     $t3, 0x0103
     ori     $t3, $t3, 0x0507
     subu    $t4, $t2, $t3       # expect 0
@@ -38,6 +39,7 @@ boot:
     .word   0x01095031          # PSUB.B $t2, $t0, $t1  (funct 0x31)
     nop
     nop
+    nop
     lui     $t3, 0x0404
     ori     $t3, $t3, 0x0404
     subu    $t4, $t2, $t3
@@ -52,6 +54,7 @@ boot:
     .word   0x01005072          # PSLL.B $t2, $t0, 1   (rs=8, rd=10, shamt=1, funct 0x32)
     nop
     nop
+    nop
     lui     $t3, 0x0204
     ori     $t3, $t3, 0x0810
     subu    $t4, $t2, $t3
@@ -60,13 +63,13 @@ boot:
     bne     $t4, $0, $fail
     nop
 
-    # PABS.B: 0x80808080 (all -128) -> 0x80808080; 0x00ff00ff -> 0x00ff00ff
+    # PABS.B: 0x80808080 (all -128) -> 0x80808080
     lui     $t0, 0x8080
     ori     $t0, $t0, 0x8080
     .word   0x01005033          # PABS.B $t2, $t0  (rs=8, rd=10, funct 0x33)
     nop
     nop
-    # -128 in 8-bit is 0x80; abs(-128) = 128 = 0x80 (same bit pattern, still 128)
+    nop
     lui     $t3, 0x8080
     ori     $t3, $t3, 0x8080
     subu    $t4, $t2, $t3
@@ -79,6 +82,7 @@ boot:
     lui     $t0, 0x1234
     ori     $t0, $t0, 0x5678
     .word   0x01005034          # PUNPKLO $t2, $t0  (rs=8, rd=10, funct 0x34)
+    nop
     nop
     nop
     lui     $t3, 0x0056
@@ -95,6 +99,7 @@ boot:
     .word   0x01005035          # PUNPKHI $t2, $t0  (rs=8, rd=10, funct 0x35)
     nop
     nop
+    nop
     lui     $t3, 0x0012
     ori     $t3, $t3, 0x0034
     subu    $t4, $t2, $t3
@@ -103,9 +108,10 @@ boot:
     bne     $t4, $0, $fail
     nop
 
-    # ABS: -1 -> 1; -42 -> 42
+    # ABS: -1 -> 1
     addiu   $t0, $0, -1
     .word   0x01005038          # ABS $t2, $t0  (rs=8, rd=10, funct 0x38)
+    nop
     nop
     nop
     ori     $t3, $0, 1
@@ -115,8 +121,10 @@ boot:
     bne     $t4, $0, $fail
     nop
 
+    # ABS: -42 -> 42
     addiu   $t0, $0, -42
-    .word   0x00085038          # ABS $t2, $t0
+    .word   0x01005038          # ABS $t2, $t0
+    nop
     nop
     nop
     ori     $t3, $0, 42
