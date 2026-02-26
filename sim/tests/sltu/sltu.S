@@ -6,10 +6,7 @@
 #   MIPS gas, soft tab, 80 column
 #
 # Description:
-#   Test the functionality of the 'sltu' instruction (set on less than
-#   unsigned, register-register comparison).
-#   $s0 = 0x80020000; $t1 = 0xffffffff.
-#   0x80020000 < 0xffffffff (unsigned), so $t0 = 1 (pass).
+#   Test the functionality of the 'sltu' instruction.
 #
 ###############################################################################
 
