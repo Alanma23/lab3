@@ -27,7 +27,6 @@ module mips_cpu (
     wire [31:0] mem_write_data_id, mem_write_data_ex;
     wire [31:0] jr_pc_id;
     wire [4:0] reg_write_addr_id, reg_write_addr_ex, reg_write_addr_mem, reg_write_addr_wb;
-    wire [31:0] mem_out;
     wire [31:0] reg_write_data_mem, reg_write_data_wb;
     wire reg_we_id, reg_we_cond_ex, reg_we_ex, reg_we_mem, reg_we_wb;
     wire movn_id, movn_ex, movz_id, movz_ex;
@@ -122,8 +121,9 @@ module mips_cpu (
         .reg_write_data_mem (reg_write_data_mem)
     );
 
-    // Load-linked / Store-conditional
-    wire atomic_en = en & (mem_read_id | mem_we_id);
+    // The atomic flag updates whenever a memory instruction (load or store) is in ID,
+    // so that an intervening store between LL and SC clears the reservation.
+    wire atomic_en = en && (mem_read_id || mem_we_id);
     dffarre       atomic  (.clk(clk), .ar(rst), .r(rst_id), .en(atomic_en), .d(mem_atomic_id), .q(mem_atomic_ex));
     dffarre       sc      (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(mem_sc_id), .q(mem_sc_ex));
 
@@ -136,7 +136,7 @@ module mips_cpu (
 
     // needed for M stage
     dffarre #(32) mem_write_data_id2ex (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(mem_write_data_id), .q(mem_write_data_ex));
-    dffarre mem_we_id2ex (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(mem_we_id & ~mem_sc_mask_id), .q(mem_we_ex));
+    dffarre mem_we_id2ex       (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(mem_we_id & ~mem_sc_mask_id), .q(mem_we_ex));
     dffarre mem_read_id2ex     (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(mem_read_id),     .q(mem_read_ex));
     dffarre mem_halfword_id2ex (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(mem_halfword_id), .q(mem_halfword_ex));
     dffarre mem_byte_id2ex     (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(mem_byte_id),     .q(mem_byte_ex));
@@ -146,7 +146,12 @@ module mips_cpu (
     dffarre #(5) reg_write_addr_id2ex (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(reg_write_addr_id), .q(reg_write_addr_ex));
     dffarre reg_we_id2ex (.clk(clk), .ar(rst), .r(rst_id), .en(en), .d(reg_we_id), .q(reg_we_cond_ex));
 
-    assign reg_we_ex = reg_we_cond_ex & |{movz_ex & alu_op_y_zero_ex, movn_ex & ~alu_op_y_zero_ex, ~movz_ex & ~movn_ex};
+    // For MOVN/MOVZ the write enable is conditional on the value of the condition register.
+    // For all other instructions the write is unconditional (movn_ex and movz_ex are both 0).
+    wire is_movn_write  = movn_ex && ~alu_op_y_zero_ex; // movn: write when condition register is nonzero
+    wire is_movz_write  = movz_ex &&  alu_op_y_zero_ex; // movz: write when condition register is zero
+    wire is_plain_write = ~movz_ex && ~movn_ex;          // normal instruction: always write
+    assign reg_we_ex = reg_we_cond_ex && (is_movn_write || is_movz_write || is_plain_write);
 
     alu x_stage (
         .alu_opcode     (alu_opcode_ex),
@@ -158,9 +163,12 @@ module mips_cpu (
         .alu_overflow   (alu_overflow) // maybe do something creative with this
     );
 
-    // needed for M stage
-    wire [31:0] sc_result = {{31{1'b0}}, (mem_sc_ex & mem_we_ex)};
+    // For SC, inject the success or failure result (1 or 0) into the pipeline
+    // in place of the ALU-computed address so it gets written back to the register file.
+    wire [31:0] sc_result       = {{31{1'b0}}, (mem_sc_ex && mem_we_ex)};
     wire [31:0] alu_sc_result_ex = mem_sc_ex ? sc_result : alu_result_ex;
+
+    // needed for M stage
     dffare #(32) alu_result_ex2mem (.clk(clk), .r(rst), .en(en), .d(alu_sc_result_ex), .q(alu_result_mem));
     dffare mem_read_ex2mem     (.clk(clk), .r(rst), .en(en), .d(mem_read_ex),     .q(mem_read_mem));
     dffare mem_halfword_ex2mem (.clk(clk), .r(rst), .en(en), .d(mem_halfword_ex), .q(mem_halfword_mem));
@@ -172,23 +180,67 @@ module mips_cpu (
     dffare reg_we_ex2mem (.clk(clk), .r(rst), .en(en), .d(reg_we_ex), .q(reg_we_mem));
 
     assign mem_read_en = mem_read_ex;
-    assign mem_write_en[3] = mem_we_ex & (~mem_byte_ex & ~mem_halfword_ex | mem_byte_ex & (mem_addr[1:0]==2'b00) | mem_halfword_ex & ~mem_addr[1]);
-    assign mem_write_en[2] = mem_we_ex & (~mem_byte_ex & ~mem_halfword_ex | mem_byte_ex & (mem_addr[1:0]==2'b01) | mem_halfword_ex & ~mem_addr[1]);
-    assign mem_write_en[1] = mem_we_ex & (~mem_byte_ex & ~mem_halfword_ex | mem_byte_ex & (mem_addr[1:0]==2'b10) | mem_halfword_ex &  mem_addr[1]);
-    assign mem_write_en[0] = mem_we_ex & (~mem_byte_ex & ~mem_halfword_ex | mem_byte_ex & (mem_addr[1:0]==2'b11) | mem_halfword_ex &  mem_addr[1]);
-    assign mem_addr = alu_result_ex;
-    assign mem_write_data = mem_byte_ex     ? {4{mem_write_data_ex[7:0]}}  :
-                            mem_halfword_ex ? {2{mem_write_data_ex[15:0]}} :
-                            mem_write_data_ex;
-    assign mem_read_data_byte_select =  (alu_result_mem[1:0] == 2'b00) ? mem_read_data[31:24] :
-                                       ((alu_result_mem[1:0] == 2'b01) ? mem_read_data[23:16] :
-                                       ((alu_result_mem[1:0] == 2'b10) ? mem_read_data[15:8] : mem_read_data[7:0]));
-    assign mem_read_data_byte_extend = {{24{mem_signextend_mem & mem_read_data_byte_select[7]}}, mem_read_data_byte_select};
-    wire [15:0] mem_read_data_hw_select = ~alu_result_mem[1] ? mem_read_data[31:16] : mem_read_data[15:0];
-    wire [31:0] mem_read_data_hw_extend = {{16{mem_signextend_mem & mem_read_data_hw_select[15]}}, mem_read_data_hw_select};
-    assign mem_out = mem_byte_mem     ? mem_read_data_byte_extend :
-                     mem_halfword_mem ? mem_read_data_hw_extend   :
-                     mem_read_data;
+    assign mem_addr    = alu_result_ex;
+
+    // Byte-enable signals for sub-word writes.
+    // A word write enables all four bytes.
+    // A halfword write enables the upper two bytes when addr[1]=0, or the lower two when addr[1]=1.
+    // A byte write enables exactly one byte selected by addr[1:0].
+    wire mem_is_word = ~mem_byte_ex && ~mem_halfword_ex;
+
+    wire mem_hw_upper = mem_halfword_ex && ~mem_addr[1];
+    wire mem_hw_lower = mem_halfword_ex &&  mem_addr[1];
+
+    wire mem_byte_b3  = mem_byte_ex && (mem_addr[1:0] == 2'b00);
+    wire mem_byte_b2  = mem_byte_ex && (mem_addr[1:0] == 2'b01);
+    wire mem_byte_b1  = mem_byte_ex && (mem_addr[1:0] == 2'b10);
+    wire mem_byte_b0  = mem_byte_ex && (mem_addr[1:0] == 2'b11);
+
+    assign mem_write_en[3] = mem_we_ex && (mem_is_word || mem_byte_b3 || mem_hw_upper);
+    assign mem_write_en[2] = mem_we_ex && (mem_is_word || mem_byte_b2 || mem_hw_upper);
+    assign mem_write_en[1] = mem_we_ex && (mem_is_word || mem_byte_b1 || mem_hw_lower);
+    assign mem_write_en[0] = mem_we_ex && (mem_is_word || mem_byte_b0 || mem_hw_lower);
+
+    // Replicate sub-word write data to fill the 32-bit memory bus.
+    reg [31:0] mem_write_data_r;
+    always @(*) begin
+        if (mem_byte_ex)
+            mem_write_data_r = {4{mem_write_data_ex[7:0]}};
+        else if (mem_halfword_ex)
+            mem_write_data_r = {2{mem_write_data_ex[15:0]}};
+        else
+            mem_write_data_r = mem_write_data_ex;
+    end
+    assign mem_write_data = mem_write_data_r;
+
+    // Select the correct byte lane from the 32-bit read data.
+    assign mem_read_data_byte_select =
+        (alu_result_mem[1:0] == 2'b00) ? mem_read_data[31:24] :
+        (alu_result_mem[1:0] == 2'b01) ? mem_read_data[23:16] :
+        (alu_result_mem[1:0] == 2'b10) ? mem_read_data[15:8]  :
+                                          mem_read_data[7:0];
+
+    assign mem_read_data_byte_extend = {{24{mem_signextend_mem && mem_read_data_byte_select[7]}},
+                                         mem_read_data_byte_select};
+
+    // Select the upper or lower halfword based on addr[1].
+    wire [15:0] mem_read_data_hw_select = ~alu_result_mem[1] ? mem_read_data[31:16]
+                                                              : mem_read_data[15:0];
+
+    wire [31:0] mem_read_data_hw_extend = {{16{mem_signextend_mem && mem_read_data_hw_select[15]}},
+                                             mem_read_data_hw_select};
+
+    // Select the appropriate width of read data for register writeback.
+    reg [31:0] mem_out;
+    always @(*) begin
+        if (mem_byte_mem)
+            mem_out = mem_read_data_byte_extend;
+        else if (mem_halfword_mem)
+            mem_out = mem_read_data_hw_extend;
+        else
+            mem_out = mem_read_data;
+    end
+
     assign reg_write_data_mem = mem_read_mem ? mem_out : alu_result_mem;
 
     // needed for W stage
