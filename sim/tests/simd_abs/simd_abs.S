@@ -12,8 +12,14 @@
 boot:
     lui     $s0, 0x8002
     ori     $s1, $0, 1
-
-    # PADD.B: 0x01020304 + 0x00010203 = 0x01030507 (per-byte, truncate to 8b)
+    # If result is 0: program never wrote (stuck or wrong entry). Write 255 first so
+    # if we time out without hitting pass/fail, result=255 means "started but stuck".
+    addiu   $t5, $0, 255
+    sw      $t5, 4($s0)
+    nop
+    nop
+    # Pass/fail handlers overwrite test reg and set status; if we get 255 we timed out.
+    # Check 1: PADD.B 0x01020304 + 0x00010203 = 0x01030507
     lui     $t0, 0x0102
     ori     $t0, $t0, 0x0304
     lui     $t1, 0x0001
@@ -22,9 +28,11 @@ boot:
     nop
     nop
     nop
+    nop
     lui     $t3, 0x0103
     ori     $t3, $t3, 0x0507
     subu    $t4, $t2, $t3       # expect 0
+    nop
     nop
     nop
     bne     $t4, $0, $fail1
